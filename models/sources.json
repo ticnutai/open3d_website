@@ -1,0 +1,77 @@
+﻿{
+    "generatedAt":  "2026-03-10T21:05:08",
+    "items":  [
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BrainStem/glTF-Binary/BrainStem.glb",
+                      "file":  "brainstem-khronos.glb",
+                      "license":  "Poser EULA (as listed in model README)"
+                  },
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/ScatteringSkull/glTF-Binary/ScatteringSkull.glb",
+                      "file":  "scattering-skull-khronos.glb",
+                      "license":  "CC0 1.0 (per model README)"
+                  },
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RiggedFigure/glTF-Binary/RiggedFigure.glb",
+                      "file":  "rigged-figure-khronos.glb",
+                      "license":  "CC BY 4.0 (per model README)"
+                  },
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RiggedSimple/glTF-Binary/RiggedSimple.glb",
+                      "file":  "rigged-simple-khronos.glb",
+                      "license":  "CC BY 4.0 (per model README)"
+                  },
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb",
+                      "file":  "recursive-skeletons-khronos.glb",
+                      "license":  "CC BY 4.0 (per model README)"
+                  },
+                  {
+                      "source":  "Khronos glTF-Sample-Assets",
+                      "url":  "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Corset/glTF-Binary/Corset.glb",
+                      "file":  "corset-khronos.glb",
+                      "license":  "CC0 1.0 (per model README)"
+                  },
+                  {
+                      "source":  "Cesium SampleData",
+                      "url":  "https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/models/CesiumAir/Cesium_Air.glb",
+                      "file":  "cesium-air.glb",
+                      "license":  "See Cesium sample asset terms"
+                  },
+                  {
+                      "source":  "Cesium SampleData",
+                      "url":  "https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/models/CesiumDrone/CesiumDrone.glb",
+                      "file":  "cesium-drone.glb",
+                      "license":  "See Cesium sample asset terms"
+                  },
+                  {
+                      "source":  "Cesium SampleData",
+                      "url":  "https://raw.githubusercontent.com/CesiumGS/cesium/main/Apps/SampleData/models/GroundVehicle/GroundVehicle.glb",
+                      "file":  "ground-vehicle.glb",
+                      "license":  "See Cesium sample asset terms"
+                  },
+                  {
+                      "source":  "Human-Organ3D (GitHub)",
+                      "url":  "https://raw.githubusercontent.com/yihalem123/Human-Organ3D/main/models/heart.glb",
+                      "file":  "heart-human-organ3d.glb",
+                      "license":  "MIT License"
+                  },
+                  {
+                      "source":  "Human-Organ3D (GitHub)",
+                      "url":  "https://raw.githubusercontent.com/yihalem123/Human-Organ3D/main/models/lung.glb",
+                      "file":  "lungs-human-organ3d.glb",
+                      "license":  "MIT License"
+                  },
+                  {
+                      "source":  "Human-Organ3D (GitHub)",
+                      "url":  "https://raw.githubusercontent.com/yihalem123/Human-Organ3D/main/models/kidney.glb",
+                      "file":  "kidneys-human-organ3d.glb",
+                      "license":  "MIT License"
+                  }
+              ]
+}

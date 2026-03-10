@@ -1,0 +1,153 @@
+{
+  "generatedAt": "2026-03-10T02:21:06",
+  "provider": "Wikimedia Commons + Openverse",
+  "highQualityOnly": true,
+  "minBytes": 120000,
+  "minPixels": 180000,
+  "items": [
+    {
+      "key": "heart",
+      "labels": {
+        "he": "פעולת הלב",
+        "en": "Heart Function"
+      },
+      "file": "media/animations/heart.gif",
+      "mime": "image/gif",
+      "title": "File:Animated Heart - Old Textbook style.gif",
+      "quality": {
+        "mode": "strict",
+        "bytes": 6497586,
+        "width": 2560,
+        "height": 1866,
+        "score": 373
+      },
+      "source": {
+        "provider": "Wikimedia Commons",
+        "page": "https://commons.wikimedia.org/wiki/File%3AAnimated_Heart_-_Old_Textbook_style.gif",
+        "license": "CC BY 4.0",
+        "author": "Doctor Jana",
+        "query": "heart beat animation anatomy"
+      }
+    },
+    {
+      "key": "respiratory",
+      "labels": {
+        "he": "מערכת הנשימה",
+        "en": "Respiratory System"
+      },
+      "file": "media/animations/respiratory.gif",
+      "mime": "image/gif",
+      "title": "Local cached animation",
+      "quality": {
+        "mode": "cached",
+        "bytes": 4511735,
+        "width": 0,
+        "height": 0,
+        "score": 0
+      },
+      "source": {
+        "provider": "Local cache",
+        "page": "",
+        "license": "See previous catalog/source",
+        "author": "Unknown",
+        "query": ""
+      }
+    },
+    {
+      "key": "circulatory",
+      "labels": {
+        "he": "מחזור הדם",
+        "en": "Circulatory System"
+      },
+      "file": "media/animations/circulatory.gif",
+      "mime": "image/gif",
+      "title": "File:Blood Circulation.gif",
+      "quality": {
+        "mode": "strict",
+        "bytes": 477685,
+        "width": 700,
+        "height": 650,
+        "score": 196
+      },
+      "source": {
+        "provider": "Wikimedia Commons",
+        "page": "https://commons.wikimedia.org/wiki/File%3ABlood_Circulation.gif",
+        "license": "CC BY-SA 3.0",
+        "author": "Wapcaplet",
+        "query": "blood circulation animation"
+      }
+    },
+    {
+      "key": "urinary",
+      "labels": {
+        "he": "מערכת השתן",
+        "en": "Urinary System"
+      },
+      "file": "media/animations/urinary.gif",
+      "mime": "image/gif",
+      "title": "File:Urinary system 00000.gif",
+      "quality": {
+        "mode": "fallback",
+        "bytes": 395004,
+        "width": 287,
+        "height": 480,
+        "score": 158
+      },
+      "source": {
+        "provider": "Wikimedia Commons",
+        "page": "https://commons.wikimedia.org/wiki/File%3AUrinary_system_00000.gif",
+        "license": "CC BY-SA 2.1 jp",
+        "author": "<a rel=\"nofollow\" class=\"external free\" href=\"http://lifesciencedb.jp/ag/?locale=en\">http://lifesciencedb.jp/ag/?locale=en</a> <a href=\"//commons.wikimedia.org/wiki/User:Nevit\" title=\"User:Nevit\">Nevit Dilmen</a> (<a href=\"//commons.wikimedia.org/wiki/User_talk:Nevit\" title=\"User talk:Nevit\"><span class=\"signature-talk\">talk</span></a>)",
+        "query": "urinary system animation"
+      }
+    },
+    {
+      "key": "nervous",
+      "labels": {
+        "he": "מערכת העצבים",
+        "en": "Nervous System"
+      },
+      "file": "media/animations/nervous.webm",
+      "mime": "video/webm",
+      "title": "Local cached animation",
+      "quality": {
+        "mode": "cached",
+        "bytes": 137389508,
+        "width": 0,
+        "height": 0,
+        "score": 0
+      },
+      "source": {
+        "provider": "Local cache",
+        "page": "",
+        "license": "See previous catalog/source",
+        "author": "Unknown",
+        "query": ""
+      }
+    },
+    {
+      "key": "head",
+      "labels": {
+        "he": "ראש ומוח",
+        "en": "Head and Brain"
+      },
+      "file": "media/animations/head.webm",
+      "mime": "video/webm",
+      "title": "Local cached animation",
+      "quality": {
+        "mode": "cached",
+        "bytes": 137389508,
+        "width": 0,
+        "height": 0,
+        "score": 0
+      },
+      "source": {
+        "provider": "Local cache",
+        "page": "",
+        "license": "See previous catalog/source",
+        "author": "Unknown",
+        "query": ""
+      }
+    }
+  ]
+}

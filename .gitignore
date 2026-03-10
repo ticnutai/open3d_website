@@ -1,0 +1,33 @@
+# Debug logs
+debug.log
+
+# E2E test screenshots
+e2e_*.png
+
+# Playwright MCP
+.playwright-mcp/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Large media files (over 100MB GitHub limit)
+*.webm
+
+# Temporary files
+*.tmp
+
+# Push script (contains token reference)
+_push_to_github.ps1
+_push_result.txt
+gh_auth.txt
+gh_check.txt
+gh_user.txt

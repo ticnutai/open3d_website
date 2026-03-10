@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open3DModel Viewer</title>
+  <link rel="icon" href="data:," />
+  <!--
+    This viewer is a lightweight web application for exploring GLB files exported
+    from the Open3DModel project. It uses the three.js library to render
+    the 3D model and automatically generates a list of structures based on
+    mesh names in the GLB. You can toggle individual structures on and off
+    using the checkboxes in the sidebar. To use your own model, place the
+    .glb file in the `models/` folder and name it `open3dmodel.glb`.
+  -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1 id="appTitle">Open3DModel Viewer</h1>
+    <div class="header-actions">
+      <button id="modelPinBtn" type="button" aria-label="Pin model position" title="Pin model position">📌</button>
+      <button id="themeSettingsBtn" type="button" aria-label="Theme settings" title="Theme settings">⚙</button>
+      <button id="langToggleBtn" type="button" aria-label="Switch language" title="Switch language">🌐</button>
+    </div>
+  </header>
+  <main id="container">
+    <div id="viewer" aria-label="3D viewer"></div>
+    <aside id="panel" aria-label="Structure controls">
+      <h2 id="structuresTitle">Structures</h2>
+      <div class="panel-tools">
+        <select id="modelSelect" aria-label="Choose model"></select>
+        <button id="openModelComposerBtn" type="button">🧩 קומפוזר</button>
+        <button id="refreshModelsBtn" type="button">רענון מודלים</button>
+        <button id="validateModelsBtn" type="button">בדיקת קטלוג</button>
+        <button id="auditFullSystemBtn" type="button">Audit Full System</button>
+        <span id="modelClipBadge" class="clip-badge">קליפים: ...</span>
+        <input id="filterInput" type="text" placeholder="Filter structures..." aria-label="Filter structures" />
+        <div id="advancedSearchBox" class="advanced-search-box" aria-label="Advanced layer search">
+          <div id="advancedSearchModes" class="advanced-search-modes">
+            <button type="button" class="advanced-search-mode-btn is-active" data-search-mode="contains">מכיל</button>
+            <button type="button" class="advanced-search-mode-btn" data-search-mode="starts">מתחיל ב</button>
+            <button type="button" class="advanced-search-mode-btn" data-search-mode="exact">מדויק</button>
+            <button type="button" class="advanced-search-mode-btn" data-search-mode="fuzzy">חכם</button>
+          </div>
+          <div id="advancedSearchResults" class="advanced-search-results" hidden></div>
+        </div>
+        <button id="exportGlbBtn" type="button">Export GLB</button>
+      </div>
+      <div id="pickedPart" class="picked-part" aria-live="polite">Selected: none</div>
+      <div id="hoverPart" class="picked-part">Hover: none</div>
+      <button id="openDetailsBtn" type="button" class="details-btn" disabled>פרטים מלאים על האיבר הנבחר</button>
+      <div class="xray-tools">
+        <label class="xray-toggle">
+          <input id="xrayToggle" type="checkbox" />
+          <span id="xrayLabelText">תצוגת רנטגן</span>
+        </label>
+        <label for="xrayOpacity">Opacity</label>
+        <input id="xrayOpacity" type="range" min="0.05" max="1" step="0.05" value="0.35" />
+        <span id="xrayOpacityValue">35%</span>
+      </div>
+      <div class="pro-tools" aria-label="Professional visualization tools">
+        <div class="pro-tools-title" id="proToolsTitle">הדמיה מקצועית</div>
+        <div class="pro-preset-row">
+          <label for="proPresetSelect" id="proPresetLabel">פריסט מקצועי</label>
+          <select id="proPresetSelect" aria-label="בחר פריסט מקצועי">
+            <option value="custom">מותאם אישית</option>
+            <option value="clinical">קליני</option>
+            <option value="teaching">לימודי</option>
+            <option value="presentation">הדגמה</option>
+          </select>
+          <button id="applyProPresetBtn" type="button">החל פריסט</button>
+        </div>
+        <label class="xray-toggle" for="realisticModeToggle">
+          <input id="realisticModeToggle" type="checkbox" />
+          <span id="realisticModeLabel">מצב ריאליסטי</span>
+        </label>
+        <label class="xray-toggle" for="humanScaleToggle">
+          <input id="humanScaleToggle" type="checkbox" />
+          <span id="humanScaleLabel">קנה מידה אנושי (1:1)</span>
+        </label>
+        <label for="activityAnimSelect" id="activityAnimLabel">אנימציית המחשה</label>
+        <select id="activityAnimSelect" aria-label="בחר אנימציית המחשה">
+          <option value="none">ללא</option>
+          <option value="breathing">נשימה</option>
+          <option value="gait">הליכה</option>
+          <option value="presentation">תצוגה היקפית</option>
+          <option value="explode">פיצול שכבות</option>
+        </select>
+        <label for="activitySpeed" id="activitySpeedLabel">מהירות אנימציה</label>
+        <input id="activitySpeed" type="range" min="0.5" max="2.5" step="0.1" value="1" />
+        <span id="activitySpeedValue">1.0x</span>
+        <div class="pro-actions" aria-label="Activity controls">
+          <button id="activityPlayBtn" type="button">נגן</button>
+          <button id="activityPauseBtn" type="button">השהה</button>
+          <button id="activityResetBtn" type="button">אפס</button>
+        </div>
+        <div class="pro-actions" aria-label="Timeline controls">
+          <button id="timelineStartBtn" type="button">התחל ציר זמן</button>
+          <button id="timelineStopBtn" type="button">עצור ציר זמן</button>
+          <span id="timelineStatus" class="timeline-status">ציר זמן: מוכן</span>
+        </div>
+        <label for="systemDemoSelect" id="systemDemoLabel">הדמיית מערכת</label>
+        <select id="systemDemoSelect" aria-label="בחר מערכת להדמיה">
+          <option value="heart">פעולת הלב</option>
+          <option value="respiratory">איברי הנשימה</option>
+          <option value="circulatory">מערכת הדם</option>
+          <option value="lymphatic">מערכת הלימפה</option>
+          <option value="urinary">מערכת השתן</option>
+          <option value="head">הראש</option>
+        </select>
+        <div class="pro-actions" aria-label="System simulation controls">
+          <button id="systemDemoStartBtn" type="button">התחל הדמיה</button>
+          <button id="systemDemoStopBtn" type="button">עצור הדמיה</button>
+          <span id="systemDemoStatus" class="timeline-status">הדמיה: מוכן</span>
+        </div>
+        <label for="performanceModeSelect" id="performanceModeLabel">מצב ביצועים</label>
+        <select id="performanceModeSelect" aria-label="בחר מצב ביצועים">
+          <option value="balanced">מאוזן</option>
+          <option value="max">מהירות מקסימלית</option>
+          <option value="quality">איכות מקסימלית</option>
+        </select>
+        <label class="xray-toggle" for="adaptiveQualityToggle">
+          <input id="adaptiveQualityToggle" type="checkbox" checked />
+          <span id="adaptiveQualityLabel">איכות דינמית בזמן תנועה</span>
+        </label>
+        <span id="performanceStatus" class="timeline-status">ביצועים: מאוזן</span>
+      </div>
+      <div class="analysis-tools">
+        <select id="partAnalysisSelect" aria-label="Analyze body part">
+          <option value="all">All Parts</option>
+          <option value="head">Head</option>
+          <option value="upper-limb">Upper Limb</option>
+          <option value="lower-limb">Lower Limb</option>
+          <option value="spine">Spine</option>
+          <option value="thorax">Thorax</option>
+          <option value="internal-organs">Internal Organs</option>
+          <option value="abdomen-pelvis">Abdomen/Pelvis</option>
+          <option value="vascular">Vascular</option>
+          <option value="nervous">Nervous</option>
+          <option value="other">Other</option>
+        </select>
+        <button id="analyzePartBtn" type="button">Analyze</button>
+        <button id="isolatePartBtn" type="button">Isolate</button>
+        <button id="resetIsolationBtn" type="button">Reset</button>
+      </div>
+      <div id="analysisResult" class="picked-part">Analysis: select a part and click Analyze</div>
+      <section class="layer-editor-panel" aria-label="Layer editor">
+        <div class="layer-editor-title">Layer Manager</div>
+        <label for="layerEditNameInput">שם שכבה</label>
+        <input id="layerEditNameInput" type="text" placeholder="שם חדש לשכבה" />
+        <label for="layerEditCategoryInput">קטגוריה</label>
+        <input id="layerEditCategoryInput" type="text" placeholder="קטגוריה חדשה" list="layerCategoriesList" />
+        <datalist id="layerCategoriesList"></datalist>
+        <div class="panel-actions">
+          <button id="applyLayerMetaBtn" type="button">שמור שם/קטגוריה</button>
+          <button id="clearLayerMetaBtn" type="button">נקה התאמה אישית</button>
+        </div>
+        <div class="layer-editor-title">Category Manager</div>
+        <label for="categoryManageSelect">קטגוריה לעריכה</label>
+        <select id="categoryManageSelect" aria-label="בחר קטגוריה לעריכה"></select>
+        <label for="categoryManageNameInput">שם קטגוריה</label>
+        <input id="categoryManageNameInput" type="text" placeholder="שם קטגוריה חדשה או ערוכה" />
+        <div class="panel-actions">
+          <button id="addCategoryBtn" type="button">הוסף קטגוריה</button>
+          <button id="renameCategoryBtn" type="button">ערוך שם קטגוריה</button>
+          <button id="deleteCategoryBtn" type="button">מחק קטגוריה</button>
+        </div>
+      </section>
+      <div class="status-bar" id="statusBar">
+        <span id="statusTotal">Total: 0</span>
+        <span id="statusVisible">Visible: 0</span>
+        <span id="statusSelected">Selected: 0</span>
+      </div>
+      <section id="directLibrary" class="direct-library" aria-label="Quick library">
+        <div class="direct-library-head">
+          <h3 id="directLibraryTitle">ספריה ישירה</h3>
+          <div class="direct-library-head-actions">
+            <button id="openAnimationsGalleryBtn" type="button">גלריה מלאה</button>
+            <button id="directLibraryRefreshBtn" type="button">רענן ספריה</button>
+          </div>
+        </div>
+        <div class="direct-library-columns">
+          <div class="direct-library-col">
+            <h4 id="directModelsTitle">מודלים</h4>
+            <div id="directModelsList" class="direct-models-list" aria-live="polite"></div>
+          </div>
+          <div class="direct-library-col">
+            <h4 id="directAnimationsTitle">אנימציות</h4>
+            <div id="directAnimationsList" class="direct-animations-list" aria-live="polite"></div>
+          </div>
+        </div>
+      </section>
+      <div class="panel-actions">
+        <button id="expandFoldersBtn" type="button">פתח הכל</button>
+        <button id="collapseFoldersBtn" type="button">סגור הכל</button>
+      </div>
+      <div class="panel-actions">
+        <button id="showAllBtn" type="button">Show All</button>
+        <button id="hideAllBtn" type="button">Hide All</button>
+        <button id="invertVisibilityBtn" type="button">Invert</button>
+        <button id="clearSelectionBtn" type="button">Clear Selection</button>
+      </div>
+      <div class="layer-icon-actions" aria-label="Layer quick actions">
+        <button id="layerIconExpandBtn" class="dialog-icon-btn" type="button" title="Expand all layers" aria-label="Expand all layers">+</button>
+        <button id="layerIconCollapseBtn" class="dialog-icon-btn" type="button" title="Collapse all layers" aria-label="Collapse all layers">-</button>
+        <button id="layerIconShowBtn" class="dialog-icon-btn" type="button" title="Show all layers" aria-label="Show all layers">O</button>
+        <button id="layerIconHideBtn" class="dialog-icon-btn" type="button" title="Hide all layers" aria-label="Hide all layers">X</button>
+        <button id="layerIconInvertBtn" class="dialog-icon-btn" type="button" title="Invert visibility" aria-label="Invert visibility">~</button>
+        <button id="layerIconClearBtn" class="dialog-icon-btn" type="button" title="Clear selection" aria-label="Clear selection">C</button>
+      </div>
+      <div class="panel-actions">
+        <button id="focusSelectedBtn" type="button">Focus Selected</button>
+        <button id="resetViewBtn" type="button">Reset View</button>
+        <button id="toggleFavoriteBtn" type="button">Add Favorite</button>
+        <button id="favoritesOnlyBtn" type="button">Favorites Only: Off</button>
+      </div>
+      <div class="panel-actions">
+        <button id="zoomInBtn" type="button">Zoom +</button>
+        <button id="zoomOutBtn" type="button">Zoom -</button>
+        <button id="angleFrontBtn" type="button">Front</button>
+        <button id="angleSideBtn" type="button">Side</button>
+        <button id="angleTopBtn" type="button">Top</button>
+      </div>
+      <div class="pro-tools" aria-label="Advanced tools">
+        <div class="pro-tools-title" id="advancedToolsTitle">כלים מתקדמים</div>
+        <div class="pro-actions">
+          <button id="highlightNeighborsBtn" type="button">הדגש שכנים</button>
+          <button id="clearNeighborsBtn" type="button">נקה שכנים</button>
+        </div>
+        <div class="pro-actions">
+          <button id="studyModeToggleBtn" type="button">מצב לימוד: כבוי</button>
+          <button id="studyRevealBtn" type="button">חשוף תשובה</button>
+          <button id="studyNextBtn" type="button">שאלה הבאה</button>
+        </div>
+        <span id="studyStatus" class="timeline-status">מצב לימוד לא פעיל</span>
+
+        <label for="compareModelSelect" id="compareModelLabel">מודל להשוואה</label>
+        <select id="compareModelSelect" aria-label="בחר מודל להשוואה"></select>
+        <div class="pro-actions">
+          <button id="compareToggleBtn" type="button">הפעל השוואה</button>
+          <button id="compareClearBtn" type="button">נקה השוואה</button>
+        </div>
+
+        <label for="layerPresetSelect" id="layerPresetLabel">שכבות מערכת</label>
+        <select id="layerPresetSelect" aria-label="בחר שכבת מערכת">
+          <option value="all">הכול</option>
+          <option value="bone">עצמות בלבד</option>
+          <option value="muscle">שרירים בלבד</option>
+          <option value="nerve">עצבים בלבד</option>
+          <option value="vessel">כלי דם בלבד</option>
+        </select>
+        <div class="pro-actions">
+          <button id="applyLayerPresetBtn" type="button">החל שכבה</button>
+          <button id="resetLayerPresetBtn" type="button">שחזור תצוגה מלאה</button>
+        </div>
+
+        <label for="bookmarkSelect" id="bookmarkLabel">סימניות מצלמה</label>
+        <select id="bookmarkSelect" aria-label="בחר סימניה"></select>
+        <div class="pro-actions">
+          <button id="bookmarkSaveBtn" type="button">שמור סימניה</button>
+          <button id="bookmarkGoBtn" type="button">עבור לסימניה</button>
+        </div>
+
+        <div class="pro-actions">
+          <button id="clinicalTourStartBtn" type="button">התחל רצף קליני</button>
+          <button id="clinicalTourStopBtn" type="button">עצור רצף קליני</button>
+        </div>
+        <span id="clinicalTourStatus" class="timeline-status">רצף קליני: מוכן</span>
+
+        <div class="pro-actions">
+          <button id="exportImageBtn" type="button">ייצוא תמונה</button>
+          <button id="recordVideoBtn" type="button">הקלטת 8 שניות</button>
+        </div>
+        <div class="pro-actions">
+          <button id="xyzGridToggleBtn" type="button" title="פתח כלי כיול XYZ">🧭 ▦ XYZ OFF</button>
+        </div>
+        <div id="xyzCalibrationPanel" class="xyz-calibration-panel" hidden>
+          <div class="xyz-calibration-row">
+            <label for="xyzMoveStepInput">צעד הזזה</label>
+            <input id="xyzMoveStepInput" type="number" min="0.001" max="5" step="0.001" value="0.02" />
+            <label for="xyzRotateStepInput">צעד סיבוב (°)</label>
+            <input id="xyzRotateStepInput" type="number" min="1" max="45" step="1" value="5" />
+            <label for="xyzScaleStepInput">צעד קנה מידה</label>
+            <input id="xyzScaleStepInput" type="number" min="0.01" max="0.5" step="0.01" value="0.05" />
+            <label class="xray-toggle" for="xyzSnapToggle">
+              <input id="xyzSnapToggle" type="checkbox" checked />
+              <span>Snap לגריד</span>
+            </label>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <button type="button" data-axis="x" data-dir="1">+X</button>
+            <button type="button" data-axis="x" data-dir="-1">-X</button>
+            <button type="button" data-axis="y" data-dir="1">+Y</button>
+            <button type="button" data-axis="y" data-dir="-1">-Y</button>
+            <button type="button" data-axis="z" data-dir="1">+Z</button>
+            <button type="button" data-axis="z" data-dir="-1">-Z</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <button type="button" data-rot-axis="x" data-rot-dir="1">+RX</button>
+            <button type="button" data-rot-axis="x" data-rot-dir="-1">-RX</button>
+            <button type="button" data-rot-axis="y" data-rot-dir="1">+RY</button>
+            <button type="button" data-rot-axis="y" data-rot-dir="-1">-RY</button>
+            <button type="button" data-rot-axis="z" data-rot-dir="1">+RZ</button>
+            <button type="button" data-rot-axis="z" data-rot-dir="-1">-RZ</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <button id="xyzScaleUpBtn" type="button">Scale +</button>
+            <button id="xyzScaleDownBtn" type="button">Scale -</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <label class="xray-toggle" for="xyzAutoSaveToggle">
+              <input id="xyzAutoSaveToggle" type="checkbox" checked />
+              <span>Auto-save כיול</span>
+            </label>
+            <label class="xray-toggle" for="xyzSymmetryToggle">
+              <input id="xyzSymmetryToggle" type="checkbox" />
+              <span>Symmetry איברים זוגיים</span>
+            </label>
+            <button id="xyzLockSelectedBtn" type="button">נעל איבר נבחר</button>
+            <button id="xyzPrevPartBtn" type="button">איבר קודם</button>
+            <button id="xyzNextPartBtn" type="button">איבר הבא</button>
+          </div>
+          <div class="xyz-calibration-row xyz-grid-advanced-row">
+            <label for="xyzGridModeSelect">Grid</label>
+            <select id="xyzGridModeSelect" aria-label="בחר סוג גריד">
+              <option value="all">All Planes</option>
+              <option value="xy">XY Only</option>
+              <option value="xz">XZ Only</option>
+              <option value="yz">YZ Only</option>
+              <option value="z-only">Z Axis Only</option>
+            </select>
+            <label for="xyzGridStyleSelect">Style</label>
+            <select id="xyzGridStyleSelect" aria-label="בחר עיצוב גריד">
+              <option value="classic">Classic</option>
+              <option value="surgical">Surgical</option>
+              <option value="neon">Neon</option>
+            </select>
+          </div>
+          <div class="xyz-calibration-row xyz-grid-size-row" aria-label="Grid size and density controls">
+            <label for="xyzGridSizeRange">Size</label>
+            <input id="xyzGridSizeRange" type="range" min="1.2" max="6" step="0.1" value="2.6" />
+            <span id="xyzGridSizeValue">2.6</span>
+            <label for="xyzGridDivisionsRange">Divisions</label>
+            <input id="xyzGridDivisionsRange" type="range" min="8" max="80" step="2" value="26" />
+            <span id="xyzGridDivisionsValue">26</span>
+          </div>
+          <div class="xyz-calibration-row xyz-number-move-row" aria-label="Numeric XYZ movement">
+            <label for="xyzPosXInput">X</label>
+            <input id="xyzPosXInput" type="number" step="0.001" />
+            <label for="xyzPosYInput">Y</label>
+            <input id="xyzPosYInput" type="number" step="0.001" />
+            <label for="xyzPosZInput">Z</label>
+            <input id="xyzPosZInput" type="number" step="0.001" />
+            <button id="xyzApplyNumbersBtn" type="button">Apply XYZ</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <label for="xyzSlotSelect">Slot</label>
+            <select id="xyzSlotSelect" aria-label="בחר סלוט כיול">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+            <button id="xyzSaveSlotBtn" type="button">שמור לסלוט</button>
+            <button id="xyzLoadSlotBtn" type="button">טען מסלוט</button>
+            <button id="xyzClearSlotBtn" type="button">נקה סלוט</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <button id="xyzResetPlacementBtn" type="button">אפס מיקום איבר נבחר</button>
+            <button id="xyzResetToSavedBtn" type="button">שחזור כיול שמור</button>
+            <button id="xyzSavePlacementBtn" type="button">שמור כיול איבר</button>
+            <button id="xyzClearPlacementBtn" type="button">בטל כיול שמור</button>
+            <button id="xyzAlignCenterXBtn" type="button">יישור X למרכז הגוף</button>
+          </div>
+          <div class="xyz-calibration-row xyz-buttons">
+            <button id="xyzUndoBtn" type="button">Undo</button>
+            <button id="xyzRedoBtn" type="button">Redo</button>
+            <button id="xyzExportCalibrationsBtn" type="button">Export כיולים</button>
+            <button id="xyzImportCalibrationsBtn" type="button">Import כיולים</button>
+            <input id="xyzImportCalibrationsInput" class="xyz-file-input" type="file" accept=".json,application/json" />
+          </div>
+          <span class="xyz-shortcuts-hint">Shortcuts: Ctrl+Z / Ctrl+Y, [ / ], Arrows, PgUp/PgDn, +/- , L, S</span>
+          <span id="xyzSelectionStatus" class="timeline-status">XYZ: בחר איבר להזזה</span>
+        </div>
+      </div>
+      <div id="structures" class="structure-list">
+        <p class="placeholder">Loading model…</p>
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="partDetailsDialog" class="part-dialog">
+    <h3 id="partDetailsTitle">פרטי איבר</h3>
+    <div class="part-tabs" role="tablist" aria-label="תוכן מפורט">
+      <button id="tabInfoBtn" type="button" class="tab-btn active" data-tab="info" role="tab" aria-selected="true">מידע</button>
+      <button id="tabAnimationsBtn" type="button" class="tab-btn" data-tab="animations" role="tab" aria-selected="false">אנימציות</button>
+      <button id="tabImagesBtn" type="button" class="tab-btn" data-tab="images" role="tab" aria-selected="false">תמונות ריאליסטיות</button>
+      <button id="tabVideosBtn" type="button" class="tab-btn" data-tab="videos" role="tab" aria-selected="false">קטעי וידאו</button>
+    </div>
+    <section id="tabPanelInfo" class="tab-panel active" data-panel="info"></section>
+    <section id="tabPanelAnimations" class="tab-panel" data-panel="animations"></section>
+    <section id="tabPanelImages" class="tab-panel" data-panel="images"></section>
+    <section id="tabPanelVideos" class="tab-panel" data-panel="videos"></section>
+    <form method="dialog" class="part-dialog-actions">
+      <button id="openXyzFromDetailsBtn" type="button">פתח כלי XYZ לאיבר</button>
+      <button id="openXyzLockFromDetailsBtn" type="button">פתח XYZ + נעילת איבר</button>
+      <button id="openXyzUnlockFromDetailsBtn" type="button">פתח XYZ + ביטול נעילה</button>
+      <button type="submit">סגור</button>
+    </form>
+  </dialog>
+
+  <dialog id="animationsGalleryDialog" class="part-dialog animations-gallery-dialog">
+    <h3 id="animationsGalleryTitle">גלריית אנימציות מלאה</h3>
+    <p id="animationsGallerySubtitle" class="animations-gallery-subtitle">כל האנימציות הזמינות מוצגות כאן לצפייה ישירה.</p>
+    <section id="animationsGalleryGrid" class="animations-gallery-grid"></section>
+    <form method="dialog" class="part-dialog-actions">
+      <button id="animationsGalleryCloseBtn" type="submit">סגור</button>
+    </form>
+  </dialog>
+
+  <dialog id="themeSettingsDialog" class="part-dialog theme-settings-dialog">
+    <h3 id="themeSettingsTitle">הגדרות תצוגה וערכות נושא</h3>
+    <div class="theme-grid">
+      <button type="button" class="theme-option-btn" data-theme="ocean-pro">Ocean Pro</button>
+      <button type="button" class="theme-option-btn" data-theme="light-gold">Light Gold Navy</button>
+      <button type="button" class="theme-option-btn" data-theme="graphite-dark">Graphite Dark</button>
+      <button type="button" class="theme-option-btn" data-theme="mint-clinic">Mint Clinic</button>
+    </div>
+    <div class="theme-custom-grid" aria-label="Theme color customization">
+      <label for="themeFrameBorderColor">מסגרת מרכזית</label>
+      <input id="themeFrameBorderColor" type="color" value="#d4af37" />
+
+      <label for="themeModelBgColor">רקע אזור המודל</label>
+      <input id="themeModelBgColor" type="color" value="#000000" />
+
+      <label for="themeModelBgMode">סוג רקע מודל</label>
+      <select id="themeModelBgMode">
+        <option value="solid">צבע אחיד</option>
+        <option value="linear">גרדיאנט ליניארי</option>
+        <option value="radial">גרדיאנט רדיאלי</option>
+      </select>
+
+      <label for="themeModelBgSecondaryColor">צבע שני לרקע</label>
+      <input id="themeModelBgSecondaryColor" type="color" value="#101820" />
+
+      <label for="themeModelBgAngle">זווית גרדיאנט</label>
+      <input id="themeModelBgAngle" type="number" min="0" max="360" step="1" value="135" />
+
+      <label for="themeControlBgColor">רקע שדות וטאבים</label>
+      <input id="themeControlBgColor" type="color" value="#ffffff" />
+
+      <label for="themeControlBorderColor">מסגרת שדות וטאבים</label>
+      <input id="themeControlBorderColor" type="color" value="#c7d6eb" />
+
+      <label for="themeControlTextColor">טקסט כללי</label>
+      <input id="themeControlTextColor" type="color" value="#0a2e6e" />
+
+      <label for="themeTabActiveBgColor">רקע טאב פעיל</label>
+      <input id="themeTabActiveBgColor" type="color" value="#1a73e8" />
+
+      <label for="themeTabActiveTextColor">טקסט טאב פעיל</label>
+      <input id="themeTabActiveTextColor" type="color" value="#ffffff" />
+    </div>
+    <div class="theme-custom-actions">
+      <button id="themeResetColorsBtn" type="button">איפוס צבעים לערכה</button>
+      <button id="themeExportPaletteBtn" type="button">ייצוא ערכה (JSON)</button>
+      <button id="themeImportPaletteBtn" type="button">ייבוא ערכה (JSON)</button>
+      <input id="themeImportPaletteInput" class="theme-file-input" type="file" accept=".json,application/json" />
+    </div>
+    <form method="dialog" class="part-dialog-actions">
+      <button type="submit">סגור</button>
+    </form>
+  </dialog>
+
+  <dialog id="modelComposerDialog" class="part-dialog model-composer-dialog">
+    <h3 id="modelComposerTitle">Model Composer</h3>
+    <label for="composerNameInput">שם מודל מורכב</label>
+    <input id="composerNameInput" type="text" placeholder="לדוגמה: לב בתוך שלד" />
+    <div class="composer-secondary-actions">
+      <button id="composerSelectAllBtn" type="button">בחר הכל</button>
+      <button id="composerClearAllBtn" type="button">נקה בחירה</button>
+      <button id="composerExportBtn" type="button">ייצא GLB</button>
+    </div>
+    <div id="composerModelsList" class="composer-models-list" aria-label="בחירת מודלים מרובים"></div>
+    <div class="layer-editor-panel" aria-label="Edited model presets">
+      <div class="layer-editor-title">Edited Models Presets</div>
+      <label for="editedModelPresetSelect">מודל ערוך</label>
+      <select id="editedModelPresetSelect" aria-label="בחר מודל ערוך"></select>
+      <label for="editedModelPresetNameInput">שם מודל ערוך</label>
+      <input id="editedModelPresetNameInput" type="text" placeholder="למשל: שלד לימודי ללא שרירים" />
+      <div class="panel-actions">
+        <button id="editedModelSaveBtn" type="button">שמור מצב ערוך</button>
+        <button id="editedModelLoadBtn" type="button">טען מצב ערוך</button>
+      </div>
+      <div class="panel-actions">
+        <button id="editedModelRenameBtn" type="button">ערוך שם</button>
+        <button id="editedModelDeleteBtn" type="button">מחק</button>
+      </div>
+    </div>
+    <div class="part-dialog-actions">
+      <button id="composerBuildBtn" type="button">בנה והוסף לבחירה</button>
+      <button id="composerDeleteBtn" type="button">מחק מודל מורכב</button>
+      <button id="composerCloseBtn" type="button">סגור</button>
+    </div>
+  </dialog>
+
+  <dialog id="fullSystemAuditDialog" class="part-dialog full-system-audit-dialog">
+    <h3 id="fullSystemAuditTitle">Full System Audit</h3>
+    <pre id="fullSystemAuditReport" class="full-system-audit-report">No report yet.</pre>
+    <div class="part-dialog-actions">
+      <button id="runFullSystemAuditBtn" type="button">Run Audit</button>
+      <button id="closeFullSystemAuditBtn" type="button">Close</button>
+    </div>
+  </dialog>
+
+  <dialog id="xyzFloatingDialog" class="part-dialog xyz-floating-dialog">
+    <h3 id="xyzFloatingTitle">XYZ Quick Edit</h3>
+    <div class="xyz-calibration-row">
+      <label for="xyzFloatingMoveStep">צעד</label>
+      <input id="xyzFloatingMoveStep" type="number" min="0.001" max="5" step="0.001" value="0.02" />
+      <label for="xyzFloatingRotateStep">סיבוב</label>
+      <input id="xyzFloatingRotateStep" type="number" min="1" max="45" step="1" value="5" />
+      <label for="xyzFloatingScaleStep">סקייל</label>
+      <input id="xyzFloatingScaleStep" type="number" min="0.01" max="0.5" step="0.01" value="0.05" />
+    </div>
+    <div class="xyz-calibration-row xyz-buttons">
+      <button type="button" class="xyz-dir-btn" data-float-axis="y" data-float-dir="1">↑ Y+</button>
+      <button type="button" class="xyz-dir-btn" data-float-axis="x" data-float-dir="-1">← X-</button>
+      <button type="button" class="xyz-dir-btn" data-float-axis="x" data-float-dir="1">X+ →</button>
+      <button type="button" class="xyz-dir-btn" data-float-axis="y" data-float-dir="-1">Y- ↓</button>
+      <button type="button" class="xyz-dir-btn" data-float-axis="z" data-float-dir="1">⤒ Z+</button>
+      <button type="button" class="xyz-dir-btn" data-float-axis="z" data-float-dir="-1">⤓ Z-</button>
+    </div>
+    <div class="xyz-calibration-row xyz-buttons">
+      <button type="button" data-float-rot-axis="x" data-float-rot-dir="1">+RX</button>
+      <button type="button" data-float-rot-axis="x" data-float-rot-dir="-1">-RX</button>
+      <button type="button" data-float-rot-axis="y" data-float-rot-dir="1">+RY</button>
+      <button type="button" data-float-rot-axis="y" data-float-rot-dir="-1">-RY</button>
+      <button type="button" data-float-rot-axis="z" data-float-rot-dir="1">+RZ</button>
+      <button type="button" data-float-rot-axis="z" data-float-rot-dir="-1">-RZ</button>
+    </div>
+    <div class="xyz-calibration-row xyz-buttons">
+      <button id="xyzFloatingScaleUpBtn" type="button">Scale +</button>
+      <button id="xyzFloatingScaleDownBtn" type="button">Scale -</button>
+      <button id="xyzFloatingUndoBtn" type="button">Undo</button>
+      <button id="xyzFloatingRedoBtn" type="button">Redo</button>
+    </div>
+    <div class="xyz-calibration-row xyz-buttons">
+      <button id="xyzFloatingFollowBtn" type="button" title="עקוב אחרי האיבר הנבחר">עקיבה: פעילה</button>
+      <button id="xyzFloatingGridStyleBtn" class="xyz-mini-icon-btn" type="button" title="הגדרות גריד">▦</button>
+      <label class="xray-toggle" for="xyzAxisLockXToggle">
+        <input id="xyzAxisLockXToggle" type="checkbox" />
+        <span>Lock X</span>
+      </label>
+      <label class="xray-toggle" for="xyzAxisLockYToggle">
+        <input id="xyzAxisLockYToggle" type="checkbox" />
+        <span>Lock Y</span>
+      </label>
+      <label class="xray-toggle" for="xyzAxisLockZToggle">
+        <input id="xyzAxisLockZToggle" type="checkbox" />
+        <span>Lock Z</span>
+      </label>
+      <label class="xray-toggle" for="xyzFloatingSnapToggle">
+        <input id="xyzFloatingSnapToggle" type="checkbox" checked />
+        <span>Snap</span>
+      </label>
+      <label class="xray-toggle" for="xyzFloatingAutoSaveToggle">
+        <input id="xyzFloatingAutoSaveToggle" type="checkbox" checked />
+        <span>Auto</span>
+      </label>
+      <label class="xray-toggle" for="xyzFloatingSymmetryToggle">
+        <input id="xyzFloatingSymmetryToggle" type="checkbox" />
+        <span>Sym</span>
+      </label>
+      <button id="xyzFloatingLockBtn" type="button">Lock/Unlock</button>
+    </div>
+    <section id="xyzFloatingGridMiniPanel" class="xyz-grid-mini-panel" hidden>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzFloatingGridModeSelect">Grid</label>
+        <select id="xyzFloatingGridModeSelect" aria-label="Grid mode">
+          <option value="all">All</option>
+          <option value="xy">XY</option>
+          <option value="xz">XZ</option>
+          <option value="yz">YZ</option>
+          <option value="z-only">Z only</option>
+        </select>
+        <label for="xyzFloatingGridStyleSelect">Style</label>
+        <select id="xyzFloatingGridStyleSelect" aria-label="Grid style">
+          <option value="classic">Classic</option>
+          <option value="surgical">Surgical</option>
+          <option value="neon">Neon</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzGridCenterColorInput">Axis</label>
+        <input id="xyzGridCenterColorInput" type="color" value="#c89b2b" />
+        <label for="xyzGridPlaneColorInput">Lines</label>
+        <input id="xyzGridPlaneColorInput" type="color" value="#5273ad" />
+      </div>
+      <div class="xyz-grid-mini-row">
+        <button id="xyzGridPresetClinicalBtn" type="button">Clinical</button>
+        <button id="xyzGridPresetContrastBtn" type="button">High Contrast</button>
+        <button id="xyzGridPresetTeachingBtn" type="button">Teaching Bold</button>
+        <button id="xyzDebugStateBtn" type="button">Debug XYZ</button>
+        <button id="xyzSafeRenderBtn" type="button">Safe Render OFF</button>
+        <button id="xyzUnlockAllBtn" type="button">Unlock All</button>
+        <button id="xyzPanicResetBtn" type="button">Panic Reset XYZ</button>
+        <button id="xyzHighlightLocksBtn" type="button">Highlight Locks</button>
+        <label class="xray-toggle" for="xyzAutoUnlockToggle">
+          <input id="xyzAutoUnlockToggle" type="checkbox" />
+          <span>Auto Unlock On Move</span>
+        </label>
+      </div>
+      <div class="xyz-grid-mini-row xyz-render-profiles-row">
+        <button id="xyzRenderNormalBtn" type="button">Normal</button>
+        <button id="xyzRenderSafeBtn" type="button">Safe</button>
+        <button id="xyzRenderUltraBtn" type="button">Ultra Safe</button>
+      </div>
+      <div class="xyz-grid-mini-row xyz-render-profiles-row">
+        <button id="xyzSaveWorkspaceBtn" type="button">Save View</button>
+        <button id="xyzLoadWorkspaceBtn" type="button">Load View</button>
+        <button id="xyzResetWorkspaceBtn" type="button">Reset Saved</button>
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzWorkspaceProfileSelect">Profile</label>
+        <select id="xyzWorkspaceProfileSelect" aria-label="Workspace profile"></select>
+        <input id="xyzWorkspaceProfileName" type="text" placeholder="profile name" aria-label="Profile name" />
+        <button id="xyzWorkspaceSaveAsBtn" type="button">Save As</button>
+        <button id="xyzWorkspaceDeleteBtn" type="button">Delete</button>
+        <button id="xyzWorkspaceExportBtn" type="button">Export</button>
+        <button id="xyzWorkspaceImportBtn" type="button">Import</button>
+        <input id="xyzWorkspaceImportInput" type="file" accept="application/json,.json" class="xyz-file-input" />
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label class="xray-toggle" for="xyzWorkspaceAutoSaveToggle">
+          <input id="xyzWorkspaceAutoSaveToggle" type="checkbox" />
+          <span id="xyzWorkspaceAutoSaveLabel">Auto Save View</span>
+        </label>
+        <label for="xyzWorkspaceAutoSaveSec">Sec</label>
+        <input id="xyzWorkspaceAutoSaveSec" type="number" min="3" max="120" step="1" value="10" />
+        <button id="xyzBackupAllBtn" type="button">Backup All</button>
+        <button id="xyzRestoreAllBtn" type="button">Restore All</button>
+        <input id="xyzRestoreAllInput" type="file" accept="application/json,.json" class="xyz-file-input" />
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label class="xray-toggle" for="xyzVerboseDebugToggle">
+          <input id="xyzVerboseDebugToggle" type="checkbox" />
+          <span id="xyzVerboseDebugLabel">Verbose Debug</span>
+        </label>
+        <button id="xyzDebugCopyBtn" type="button">Copy Log</button>
+        <button id="xyzDebugClearBtn" type="button">Clear Log</button>
+      </div>
+      <pre id="xyzDebugConsole" class="xyz-debug-console" aria-live="polite">[XYZ Debug] ready</pre>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzFloatingGridSizeRange">Size</label>
+        <input id="xyzFloatingGridSizeRange" type="range" min="1.2" max="6" step="0.1" value="2.6" />
+        <span id="xyzFloatingGridSizeValue">2.6</span>
+        <label for="xyzFloatingGridDivisionsRange">Div</label>
+        <input id="xyzFloatingGridDivisionsRange" type="range" min="8" max="80" step="2" value="26" />
+        <span id="xyzFloatingGridDivisionsValue">26</span>
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzGridLineBoldnessRange">Line Bold</label>
+        <input id="xyzGridLineBoldnessRange" type="range" min="0.6" max="8" step="0.1" value="1" />
+        <span id="xyzGridLineBoldnessValue">1.0</span>
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label class="xray-toggle" for="xyzGridNumbersBoldToggle">
+          <input id="xyzGridNumbersBoldToggle" type="checkbox" />
+          <span>Bold Numbers</span>
+        </label>
+        <label for="xyzGridNumberScaleRange">Number Size</label>
+        <input id="xyzGridNumberScaleRange" type="range" min="0.8" max="2" step="0.1" value="1" />
+        <span id="xyzGridNumberScaleValue">1.0</span>
+      </div>
+      <div class="xyz-grid-mini-row">
+        <label for="xyzSnapSourceSelect">Snap To</label>
+        <select id="xyzSnapSourceSelect" aria-label="Snap source">
+          <option value="step">Move Step</option>
+          <option value="grid">Grid Step</option>
+        </select>
+        <label for="xyzSnapMultiplierRange">Snap x</label>
+        <input id="xyzSnapMultiplierRange" type="range" min="0.25" max="4" step="0.25" value="1" />
+        <span id="xyzSnapMultiplierValue">1.00x</span>
+      </div>
+    </section>
+    <section class="xyz-joystick-panel" aria-label="Joystick move controls">
+      <div class="xyz-joystick-title">Analog Joystick</div>
+      <div class="xyz-analog-wrap">
+        <div id="xyzAnalogPad" class="xyz-analog-pad" aria-label="Analog joystick" role="application">
+          <div id="xyzAnalogStick" class="xyz-analog-stick" aria-hidden="true"></div>
+        </div>
+        <div class="xyz-analog-hint">Drag the stick to move on X/Y</div>
+        <div class="xyz-step-live" aria-label="Move step sensitivity">
+          <label for="xyzStepSlider">Step</label>
+          <input id="xyzStepSlider" type="range" min="0.001" max="5" step="0.001" value="0.02" />
+          <span id="xyzStepValue">0.020</span>
+        </div>
+      </div>
+      <div class="xyz-joystick-z">
+        <button type="button" data-float-joy-axis="z" data-float-joy-dir="1">Z+</button>
+        <button type="button" data-float-joy-axis="z" data-float-joy-dir="-1">Z-</button>
+      </div>
+    </section>
+    <div class="xyz-calibration-row xyz-buttons">
+      <button id="xyzFloatingSaveBtn" type="button">שמור</button>
+      <button id="xyzFloatingResetSavedBtn" type="button">לטעון שמור</button>
+      <button id="xyzFloatingResetBaseBtn" type="button">אפס בסיס</button>
+    </div>
+    <form method="dialog" class="part-dialog-actions">
+      <button type="submit">סגור</button>
+    </form>
+  </dialog>
+
+  <button id="xyzDebugFab" type="button" class="xyz-debug-fab" aria-label="Open debug" title="Open debug">DBG</button>
+
+  <footer>
+    <p id="footerText">
+      This viewer is built with
+      <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a>
+      and is intended for educational purposes. Models are licensed under
+      Creative Commons CC&nbsp;BY&nbsp;SA as described on the
+      <a href="https://anatomytool.org/open3dmodel" target="_blank"
+        rel="noopener">Open3DModel project page</a>【19298769735226†L65-L67】.
+    </p>
+  </footer>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js"
+      }
+    }
+  </script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
